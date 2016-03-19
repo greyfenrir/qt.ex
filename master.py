@@ -1,17 +1,15 @@
 #!/usr/bin/python3
-from PyQt5.QtCore import (QDate, QDateTime, QRegExp, QSortFilterProxyModel, Qt,
-        QTime)
+import sys
+
+
 from PyQt5.QtGui import QStandardItemModel
-from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout,
-        QGroupBox, QHBoxLayout, QLabel, QLineEdit, QTreeView, QVBoxLayout,
-        QWidget)
+from PyQt5.QtCore import QDate, QDateTime, QRegExp, QSortFilterProxyModel, Qt, QTime
+from PyQt5.QtWidgets import QApplication, QCheckBox, QComboBox, QGridLayout, QGroupBox, QHBoxLayout, QMessageBox
+from PyQt5.QtWidgets import QLineEdit, QTreeView, QVBoxLayout, QPushButton, QWidget, QLabel, QAbstractItemView
+
 
 
 SUBJECT, SENDER, DATE = range(3)
-
-# Work around the fact that QSortFilterProxyModel always filters datetime
-# values in QtCore.Qt.ISODate format, but the tree views display using
-# QtCore.Qt.DefaultLocaleShortDate format.
 
 
 class SortFilterProxyModel(QSortFilterProxyModel):
@@ -33,15 +31,45 @@ class Window(QWidget):
     def __init__(self):
         super(Window, self).__init__()
 
-        self.proxyModel = SortFilterProxyModel()
-        self.proxyModel.setDynamicSortFilter(True)
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.source_gbox())
+        mainLayout.addWidget(self.proxy_gbox())
 
+        button = QPushButton('Merge')
+        button.clicked.connect(self.merge)
+        mainLayout.addWidget(button)
+
+        self.setLayout(mainLayout)
+
+        self.setWindowTitle("Basic Sort/Filter Model")
+        self.resize(600, 650)
+
+    def merge(self):
+        mb = QMessageBox()
+        mb.setText('Merge! %s' % str(self.sourceView.selectedIndexes()))
+        mb.exec_()
+
+    def source_gbox(self):
         self.sourceGroupBox = QGroupBox("Original Model")
-        self.proxyGroupBox = QGroupBox("Sorted/Filtered Model")
 
         self.sourceView = QTreeView()
         self.sourceView.setRootIsDecorated(False)
         self.sourceView.setAlternatingRowColors(True)
+        self.sourceView.setSortingEnabled(True)
+        self.sourceView.sortByColumn(SENDER, Qt.AscendingOrder)
+        self.sourceView.setSelectionMode(QAbstractItemView.MultiSelection)
+
+        sourceLayout = QHBoxLayout()
+        sourceLayout.addWidget(self.sourceView)
+        self.sourceGroupBox.setLayout(sourceLayout)
+
+        return self.sourceGroupBox
+
+    def proxy_gbox(self):
+        self.proxyModel = SortFilterProxyModel()
+        self.proxyModel.setDynamicSortFilter(True)
+
+        self.proxyGroupBox = QGroupBox("Sorted/Filtered Model")
 
         self.proxyView = QTreeView()
         self.proxyView.setRootIsDecorated(False)
@@ -76,10 +104,6 @@ class Window(QWidget):
         self.filterCaseSensitivityCheckBox.toggled.connect(self.filterRegExpChanged)
         self.sortCaseSensitivityCheckBox.toggled.connect(self.sortChanged)
 
-        sourceLayout = QHBoxLayout()
-        sourceLayout.addWidget(self.sourceView)
-        self.sourceGroupBox.setLayout(sourceLayout)
-
         proxyLayout = QGridLayout()
         proxyLayout.addWidget(self.proxyView, 0, 0, 1, 3)
         proxyLayout.addWidget(self.filterPatternLabel, 1, 0)
@@ -92,20 +116,14 @@ class Window(QWidget):
         proxyLayout.addWidget(self.sortCaseSensitivityCheckBox, 4, 2)
         self.proxyGroupBox.setLayout(proxyLayout)
 
-        mainLayout = QVBoxLayout()
-        mainLayout.addWidget(self.sourceGroupBox)
-        mainLayout.addWidget(self.proxyGroupBox)
-        self.setLayout(mainLayout)
-
-        self.setWindowTitle("Basic Sort/Filter Model")
-        self.resize(500, 450)
-
         self.proxyView.sortByColumn(SENDER, Qt.AscendingOrder)
         self.filterColumnComboBox.setCurrentIndex(SENDER)
 
         self.filterPatternLineEdit.setText("Andy|Grace")
         self.filterCaseSensitivityCheckBox.setChecked(True)
         self.sortCaseSensitivityCheckBox.setChecked(True)
+
+        return self.proxyGroupBox
 
     def setSourceModel(self, model):
         self.proxyModel.setSourceModel(model)
@@ -175,8 +193,6 @@ def createMailModel(parent):
 
 
 if __name__ == '__main__':
-
-    import sys
 
     app = QApplication(sys.argv)
     window = Window()

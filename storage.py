@@ -1,24 +1,18 @@
 # dictionary example:
 #
-# dic = {'form0':
-#           {
-#            'form1': [<link1>, <link2>],
-#            'form2': [<link3>]
-#           }
-#       }
+# recs = {'general': <general>, examples: <list of link to examples>}
 
 
-def join(*dicts):
-    for dic in dicts:
+def merge(*recs):
         pass
-    # find biggest dict
-    # choose general form from biggest dict
-    # mix dicts.
+    # find biggest recs
+    # choose general form from biggest recs
+    # mix recs.
 
 
-def separate(*dicts):
+def separate(*recs):
     pass
-    #remove elements from dicts
+    #remove elements from recs
 
 
 def remember_action():
