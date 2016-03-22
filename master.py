@@ -56,35 +56,79 @@ class MyDB:
         self.db.setDatabaseName('sports.db')
         self.db.open()
         model = QSqlQueryModel()
-        query_str = """ select firstname, count(firstname) from sportsmen group by firstname
+        query_str = """ select name, count(name) as counts from domains group by name order by counts desc
         """
         model.setQuery(query_str, db=self.db)
-        model.setHeaderData(0, Qt.Horizontal, "ID")
-        model.setHeaderData(1, Qt.Horizontal, "First name")
-        model.setHeaderData(2, Qt.Horizontal, "Last name")
+        model.setHeaderData(0, Qt.Horizontal, "Word")
+        model.setHeaderData(1, Qt.Horizontal, "Count")
+
         return model
 
-    def createDB(self):
+    def fill_db(self):
+        query = QSqlQuery(db=self.db)
+        with open('/home/fenrir/tmp/sha.txt') as book:
+            text = book.read()
+            text = text[:int(len(text)/20)]
+            num_s = 0
+            num_w = 0
+            while text:
+                ends = '.!?'
+                endn = [text.find(e) for e in ends if e in text]
+                if endn:
+                    sentence = text[:min(endn) + 1]
+                    text = text[min(endn) + 1:]
+                else:
+                    sentence = text
+                    text = ''
+                q4 = 'insert into sentences values (%s, "%s", %s)' % (num_s, sentence, 0)
+                query.exec_(q4)
+                words = sentence.split(' ')
+                for word in words:
+                    q5 = 'insert into words values (%s, "%s", %s)' % (num_w, word, num_s)
+                    query.exec_(q5)
+                    q6 = 'insert into domains values (%s, "%s", %s)' % (num_w, word, num_w)
+                    query.exec_(q6)
+                    num_w += 1
+                num_s += 1
+
+    def create_db(self):
         self.db = QSqlDatabase.addDatabase('QSQLITE')
         self.db.setDatabaseName('sports.db')
         if not self.db.open():
             return False
         query = QSqlQuery(db=self.db)
 
-        query.exec_("create table sportsmen(id int primary key, "
-                    "firstname varchar(20), lastname varchar(20))")
-        query.exec_("insert into sportsmen values(101, 'Roger', 'Federer')")
-        query.exec_("insert into sportsmen values(102, 'Christiano', 'Ronaldo')")
-        query.exec_("insert into sportsmen values(103, 'Ussain', 'Bolt')")
-        query.exec_("insert into sportsmen values(104, 'Sachin', 'Tendulkar')")
-        query.exec_("insert into sportsmen values(105, 'Saina', 'Nehwal')")
+        q1 = ("CREATE TABLE sentences(" +
+                    "id INTEGER, " +
+                    "content TEXT, " +
+                    "page INTEGER, " +
+                    "PRIMARY KEY(id))")
+        query.exec_(q1)
+
+        q2 = ("CREATE TABLE words(" +
+                    "id INTEGER, " +
+                    "word TEXT, " +
+                    "sentence_id INTEGER, " +
+                    "PRIMARY KEY(id), "
+                    "FOREIGN KEY (sentence_id) REFERENCES sentences(id))")
+        query.exec_(q2)
+        q3 = ("CREATE TABLE domains(" +
+                    "id INTEGER, " +
+                    "name TEXT, " +
+                    "word_id INTEGER, " +
+                    "PRIMARY KEY(id), " +
+                    "FOREIGN KEY (word_id) REFERENCES words(id))")
+        query.exec_(q3)
+
         return True
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    # createDB()
     base = MyDB()
+    #base.create_db()
+    #base.fill_db()
+
     window = MyWin(base)
 
     window.set_model()
