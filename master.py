@@ -35,21 +35,26 @@ class MyWin(QWidget):
     def merge(self):
         ind_list = self.view.selectedIndexes()
         out = list(self.view.model().data(i) for i in ind_list)
+        out = [out[i] for i in range(len(out)) if i % 2 == 0]
+        if len(out) < 2:
+            return
         self.mydb.merge(out)
+        mb = QMessageBox()
+        mb.setText('Merged %s' % str(out))
+        mb.exec_()
+        self.set_model()
 
 
 class MyDB:
     def __init__(self):
+        self.db = None
         pass
 
     def merge(self, out):
         query = QSqlQuery(db=self.db)
-        query.exec("update sportsmen set id = 0 where lastname = 'Bill'")
-
-        mb = QMessageBox()
-        mb.setText('Merge! %s' % str(out))
-        mb.exec_()
-
+        main_name = out[0]
+        for current_name in out[1:]:
+            query.exec('update domains set name="%s" where name="%s"' % (main_name, current_name))
 
     def get_model(self):
         self.db = QSqlDatabase.addDatabase('QSQLITE')
